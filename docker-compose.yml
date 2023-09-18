@@ -1,0 +1,18 @@
+version: "3.7" # docker-compose version using 3.7
+
+services:
+  item-app:
+    image: ghcr.io/kucinginsom/item-app:v1  # Pull image from this github package repository
+    ports:
+      - "80:8080"  # Mapping Port 8080 on 80
+    depends_on:
+      - item-db  # Item app launch after item-db launch
+    restart: always  # Add policy to always restart when stop
+
+  item-db:
+    image: mongo:3 # Pull image from docker hub
+    volumes:
+      - app-db:/data/db  # Attach volume with name app-db and target to /data/db on container
+
+volumes: # create volume for item-db used
+  app-db:
