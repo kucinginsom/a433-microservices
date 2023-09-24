@@ -1,0 +1,59 @@
+version: 2.1  # Specify the CircleCI configuration version
+jobs:
+  lint-dockerfile:  # Define a job named "lint-dockerfile"
+    docker:
+      - image: cimg/base:2022.06  # Use a Docker image
+    steps:
+      - checkout  # Checkout the code from the repository
+      - run:
+          name: Install Hadolint
+          command: |
+            wget https://github.com/hadolint/hadolint/releases/download/v2.7.0/hadolint-Linux-x86_64
+            chmod +x hadolint-Linux-x86_64
+            sudo mv hadolint-Linux-x86_64 /usr/local/bin/hadolint  # Install and configure Hadolint
+      - run:
+          name: Lint Dockerfile
+          command: hadolint Dockerfile  # Run Hadolint to lint the Dockerfile
+
+  test-app:  # Define a job named "test-app"
+    docker:
+      - image: cimg/go:1.17  # Use a Go Docker image
+    steps:
+      - checkout  # Checkout the code from the repository
+      - run:
+          name: Install Dependencies
+          command: go mod download  # Install Go dependencies
+      - run:
+          name: Run tests
+          command: |
+            set CGO_ENABLED=0  # Setting CGO_ENABLED to 0
+            go test -v -short --count=1 $(go list ./...)  # Run Go tests
+
+  build-app-karsajobs:  # Define a job named "build-app-karsajobs"
+    docker:
+      - image: cimg/base:2022.06  # Use a Docker image
+    steps:
+      - checkout  # Checkout the code from the repository
+      - setup_remote_docker:
+          version: 20.10.14  # Set up Docker remote access
+      - run:
+          name: Login To Github Packages
+          command: echo $PAT_GITHUB_PACKAGES | docker login -u $USERNAME_GITHUB --password-stdin ghcr.io  # Log in to GitHub Packages
+      - run:
+          name: Build Docker Image
+          command: docker build -t ghcr.io/${USERNAME_GITHUB}/${IMAGE_NAME}:latest -f Dockerfile .  # Build a Docker image
+      - run:
+          name: Push Docker Image
+          command: docker push ghcr.io/${USERNAME_GITHUB}/${IMAGE_NAME}:latest  # Push the Docker image to a registry
+
+workflows: # Run the job that define above, sequentially
+  version: 2  # Specify the workflow version
+  build-and-deploy:
+    jobs:
+      - lint-dockerfile  # Run the "lint-dockerfile" job
+      - test-app:
+          requires:
+            - lint-dockerfile  # Run the "test-app" job after "lint-dockerfile"
+      - build-app-karsajobs:
+          requires:
+            - test-app  # Run the "build-app-karsajobs" job after "test-app"
