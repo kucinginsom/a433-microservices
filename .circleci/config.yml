@@ -41,10 +41,10 @@ jobs:
           command: echo $PAT_GITHUB_PACKAGES | docker login -u $USERNAME_GITHUB --password-stdin ghcr.io  # Log in to GitHub Packages
       - run:
           name: Build Docker Image
-          command: docker build -t ghcr.io/${USERNAME_GITHUB}/${IMAGE_NAME}:latest -f Dockerfile .  # Build a Docker image
+          command: docker build -t ghcr.io/${USERNAME_GITHUB}/${CIRCLE_BRANCH}:latest -f Dockerfile .  # Build a Docker image
       - run:
           name: Push Docker Image
-          command: docker push ghcr.io/${USERNAME_GITHUB}/${IMAGE_NAME}:latest  # Push the Docker image to a registry
+          command: docker push ghcr.io/${USERNAME_GITHUB}/${CIRCLE_BRANCH}:latest  # Push the Docker image to a registry
 
 workflows: # Run the job that define above, sequentially
   version: 2  # Specify the workflow version
