@@ -1,0 +1,43 @@
+version: 2.1  # Specify the CircleCI configuration version
+jobs:
+  lint-dockerfile:  # Define a job named "lint-dockerfile"
+    docker:
+      - image: cimg/base:2022.06  # Use a Docker image
+    steps:
+      - checkout  # Checkout the code from the repository
+      - run:
+          name: Install Hadolint
+          command: |
+            wget https://github.com/hadolint/hadolint/releases/download/v2.7.0/hadolint-Linux-x86_64
+            chmod +x hadolint-Linux-x86_64
+            sudo mv hadolint-Linux-x86_64 /usr/local/bin/hadolint  # Install and configure Hadolint
+      - run:
+          name: Lint Dockerfile
+          command: hadolint Dockerfile  # Run Hadolint to lint the Dockerfile
+
+
+  build-app-karsajobs-ui:  # Define a job named "build-app-karsajobs-ui"
+    docker:
+      - image: cimg/base:2022.06  # Use a Docker image
+    steps:
+      - checkout  # Checkout the code from the repository
+      - setup_remote_docker:
+          version: 20.10.14  # Set up Docker remote access
+      - run:
+          name: Login To Github Packages
+          command: echo $PAT_GITHUB_PACKAGES | docker login -u $USERNAME_GITHUB --password-stdin ghcr.io  # Log in to GitHub Packages
+      - run:
+          name: Build Docker Image
+          command: docker build -t ghcr.io/${USERNAME_GITHUB}/${CIRCLE_BRANCH}:latest -f Dockerfile .  # Build a Docker image
+      - run:
+          name: Push Docker Image
+          command: docker push ghcr.io/${USERNAME_GITHUB}/${CIRCLE_BRANCH}:latest  # Push the Docker image to a registry
+
+workflows: # Run the job that define above, sequentially
+  version: 2  # Specify the workflow version
+  build-and-deploy:
+    jobs:
+      - lint-dockerfile  # Run the "lint-dockerfile" job
+      - build-app-karsajobs-ui:
+          requires:
+            - test-app  # Run the "build-app-karsajobs-ui" job after "lint-dockerfile"
