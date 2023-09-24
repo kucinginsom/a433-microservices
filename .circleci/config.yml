@@ -38,6 +38,4 @@ workflows: # Run the job that define above, sequentially
   build-and-deploy:
     jobs:
       - lint-dockerfile  # Run the "lint-dockerfile" job
-      - build-app-karsajobs-ui:
-          requires:
-            - test-app  # Run the "build-app-karsajobs-ui" job after "lint-dockerfile"
+      - build-app-karsajobs-ui # Run the "build-app-karsajobs-ui" job after "lint-dockerfile"
